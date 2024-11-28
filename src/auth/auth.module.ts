@@ -7,6 +7,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 import { AuthController } from './auth.controller';
 import { AnalyticsModule } from '../analytics/analytics.module';
+import { GoogleStrategy } from './strategies/google.strategy';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { AnalyticsModule } from '../analytics/analytics.module';
     AnalyticsModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, RefreshTokenStrategy],
+  providers: [AuthService, JwtStrategy, RefreshTokenStrategy, GoogleStrategy],
   exports: [AuthService],
 })
 export class AuthModule { }
