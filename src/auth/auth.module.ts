@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 import { AuthController } from './auth.controller';
+import { AnalyticsModule } from '../analytics/analytics.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { AuthController } from './auth.controller';
       }),
       inject: [ConfigService],
     }),
+    AnalyticsModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, RefreshTokenStrategy],
