@@ -4,6 +4,7 @@ import { environmentConfig } from './environment.config';
 import { jwtConfig } from './jwt.config';
 import { userPasswordConfig } from './user-password.config';
 import { posthogConfig } from './posthog.config';
+import { googleConfig } from './google.config';
 
 @Module({
   imports: [
@@ -13,7 +14,8 @@ import { posthogConfig } from './posthog.config';
         environmentConfig,
         jwtConfig,
         userPasswordConfig,
-        posthogConfig
+        posthogConfig,
+        googleConfig  // Add this line
       ],
     }),
   ],

@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PosthogService } from '../analytics/posthog.service';
+import { LoginEventData } from 'src/models/event/login-event-data.dto';
+import { LoginGoogleUserDto } from 'src/models/user/login-google-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -49,7 +51,7 @@ export class AuthService {
     });
   }
 
-  async validateUser(username: string, pass: string): Promise<any> {
+  async validateJwtUser(username: string, pass: string): Promise<any> {
     // Your existing validation logic
     const validationResult = { userId: 1, username: 'test' }; // Mock result
 
@@ -74,5 +76,19 @@ export class AuthService {
       },
     });
     return null;
+  }
+
+  async handleGoogleAuth(googleUser: LoginGoogleUserDto, metadata: LoginEventData) {
+    // Convert Google user to your app's user format
+    const user = {
+      userId: googleUser.email, // You might want to generate or lookup a proper userId
+      username: googleUser.email,
+      firstName: googleUser.firstName,
+      lastName: googleUser.lastName,
+      picture: googleUser.picture
+    };
+
+    // Generate tokens like in regular login
+    return this.generateTokens(user, metadata);
   }
 }

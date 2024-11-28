@@ -90,15 +90,15 @@ describe('AuthService', () => {
     });
   });
 
-  describe('validateUser', () => {
+  describe('validateJwtUser', () => {
     it('should return user object when credentials are valid', async () => {
-      const result = await service.validateUser('test', 'password');
+      const result = await service.validateJwtUser('test', 'password');
 
       expect(result).toEqual({ userId: 1, username: 'test' });
     });
 
     it('should return null when credentials are invalid', async () => {
-      const result = await service.validateUser('test', 'wrongpassword');
+      const result = await service.validateJwtUser('test', 'wrongpassword');
 
       expect(result).toBeNull();
     });
