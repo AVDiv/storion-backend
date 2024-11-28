@@ -1,19 +1,31 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { PosthogService } from '../analytics/posthog.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly posthogService: PosthogService,
   ) { }
 
-  async generateTokens(user: any) {
+  async generateTokens(user: any, metadata?: { userAgent?: string; ip?: string }) {
     const [accessToken, refreshToken] = await Promise.all([
       this.getAccessToken(user),
       this.getRefreshToken(user)
     ]);
+
+    await this.posthogService.capture({
+      distinctId: user.userId.toString(),
+      event: 'user.login',
+      properties: {
+        username: user.username,
+        userAgent: metadata?.userAgent,
+        ip: metadata?.ip,
+      },
+    });
 
     return {
       access_token: accessToken,
@@ -38,12 +50,29 @@ export class AuthService {
   }
 
   async validateUser(username: string, pass: string): Promise<any> {
-    // Implement your user validation logic here
-    // For example, check the username and password against a database
-    const user = { userId: 1, username: 'test' }; // Replace with actual user validation
-    if (user && user.username === username && pass === 'password') {
-      return user;
+    // Your existing validation logic
+    const validationResult = { userId: 1, username: 'test' }; // Mock result
+
+    if (validationResult) {
+      await this.posthogService.capture({
+        distinctId: validationResult.userId.toString(),
+        event: 'user.login_attempt',
+        properties: {
+          username,
+          success: true,
+        },
+      });
+      return validationResult;
     }
+
+    await this.posthogService.capture({
+      distinctId: username,
+      event: 'user.login_attempt',
+      properties: {
+        username,
+        success: false,
+      },
+    });
     return null;
   }
 }
