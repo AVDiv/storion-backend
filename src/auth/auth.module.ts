@@ -8,6 +8,7 @@ import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 import { AuthController } from './auth.controller';
 import { AnalyticsModule } from '../analytics/analytics.module';
 import { GoogleStrategy } from './strategies/google.strategy';
+import { UserModule } from 'src/user/user.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
       inject: [ConfigService],
     }),
     AnalyticsModule,
+    UserModule
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, RefreshTokenStrategy, GoogleStrategy],

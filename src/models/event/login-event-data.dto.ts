@@ -1,4 +1,3 @@
-export class LoginEventData {
-  userAgent?: string;
-  ip?: string;
-}
+import { SignupEventData } from "./signup-event-data.dto";
+
+export class LoginEventData extends SignupEventData { }
