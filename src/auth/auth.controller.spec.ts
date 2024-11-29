@@ -29,13 +29,13 @@ describe('AuthController', () => {
         {
           provide: JwtService,
           useValue: {
-            sign: () => 'test-token'
-          }
+            sign: () => 'test-token',
+          },
         },
         {
           provide: ConfigService,
-          useValue: mockConfigService
-        }
+          useValue: mockConfigService,
+        },
       ],
     }).compile();
 
@@ -50,7 +50,7 @@ describe('AuthController', () => {
       };
       const tokens = {
         access_token: 'test-token',
-        refresh_token: 'test-refresh-token'
+        refresh_token: 'test-refresh-token',
       };
       const result = await authController.login(req);
       expect(result).toHaveProperty('access_token');

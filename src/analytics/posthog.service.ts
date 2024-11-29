@@ -1,4 +1,3 @@
-
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PostHog } from 'posthog-node';
@@ -8,10 +7,9 @@ export class PosthogService implements OnModuleDestroy {
   private client: PostHog;
 
   constructor(private configService: ConfigService) {
-    this.client = new PostHog(
-      this.configService.get('posthog.apiKey'),
-      { host: this.configService.get('posthog.host') }
-    );
+    this.client = new PostHog(this.configService.get('posthog.apiKey'), {
+      host: this.configService.get('posthog.host'),
+    });
   }
 
   async capture(params: {

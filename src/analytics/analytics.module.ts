@@ -1,4 +1,3 @@
-
 import { Module } from '@nestjs/common';
 import { PosthogService } from './posthog.service';
 
@@ -6,4 +5,4 @@ import { PosthogService } from './posthog.service';
   providers: [PosthogService],
   exports: [PosthogService],
 })
-export class AnalyticsModule { }
+export class AnalyticsModule {}

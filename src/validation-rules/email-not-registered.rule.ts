@@ -10,8 +10,10 @@ import { UserService } from 'src/user/user.service';
 
 @ValidatorConstraint({ async: true })
 @Injectable()
-export class EmailNotRegisteredValidator implements ValidatorConstraintInterface {
-  constructor(private readonly userService: UserService) { }
+export class EmailNotRegisteredValidator
+  implements ValidatorConstraintInterface
+{
+  constructor(private readonly userService: UserService) {}
 
   async validate(value: any, args?: ValidationArguments) {
     if (typeof value !== 'string') return false;

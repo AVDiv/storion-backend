@@ -63,7 +63,7 @@ describe('AuthService', () => {
         {
           secret: configService.get('jwt.accessToken.secret'),
           expiresIn: configService.get('jwt.accessToken.expiresIn'),
-        }
+        },
       );
     });
   });

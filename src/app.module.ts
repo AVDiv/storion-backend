@@ -9,8 +9,15 @@ import { UserModule } from './user/user.module';
 import { ValidationRulesModule } from './validation-rules/validation-rules.module';
 
 @Module({
-  imports: [AuthModule, AppConfigModule, AnalyticsModule, PrismaModule, UserModule, ValidationRulesModule],
+  imports: [
+    AuthModule,
+    AppConfigModule,
+    AnalyticsModule,
+    PrismaModule,
+    UserModule,
+    ValidationRulesModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}
