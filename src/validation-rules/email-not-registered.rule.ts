@@ -5,20 +5,22 @@ import {
   ValidatorConstraint,
   ValidatorConstraintInterface,
 } from 'class-validator';
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { UserService } from 'src/user/user.service';
 
 @ValidatorConstraint({ async: true })
 @Injectable()
 export class EmailNotRegisteredValidator
-  implements ValidatorConstraintInterface
-{
-  constructor(private readonly userService: UserService) {}
+  implements ValidatorConstraintInterface {
+  constructor(private readonly userService: UserService) { }
 
   async validate(value: any, args?: ValidationArguments) {
     if (typeof value !== 'string') return false;
     const user = await this.userService.findUserByEmail(value);
-    return user === null;
+    if (user) {
+      throw new ConflictException('Email is already registered');
+    }
+    return true;
   }
 
   defaultMessage() {
