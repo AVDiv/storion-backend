@@ -5,6 +5,7 @@ import {
   UseGuards,
   Get,
   Body,
+  HttpCode,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -13,12 +14,14 @@ import { LoginEventData } from 'src/models/event/login-event-data.dto';
 import { RequestWithUser } from 'src/models/request/request-with-user.interface';
 import { SignupEventData } from 'src/models/event/signup-event-data.dto';
 import { CreateUserDto } from 'src/models/user/create-user.dto';
+import { LoginJwtUserDto } from 'src/models/user/login-jwt-user.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('signup')
+  @HttpCode(201)
   async signup(
     @Request() req: RequestWithUser,
     @Body() createUserDto: CreateUserDto,
@@ -27,16 +30,19 @@ export class AuthController {
       userAgent: req.headers['user-agent'],
       ip: req.ip,
     };
-    return this.authService.register(req.body, metadata);
+    return this.authService.register(createUserDto, metadata);
   }
 
   @Post('login')
-  async login(@Request() req: RequestWithUser) {
-    const metadata = {
+  async login(
+    @Request() req: RequestWithUser,
+    @Body() loginUserDto: LoginJwtUserDto,
+  ) {
+    const metadata: LoginEventData = {
       userAgent: req.headers['user-agent'],
       ip: req.ip,
     };
-    return this.authService.generateTokens(req.body, metadata);
+    return this.authService.validateJwtUser(loginUserDto, metadata);
   }
 
   @Post('refresh')

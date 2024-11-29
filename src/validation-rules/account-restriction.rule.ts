@@ -5,12 +5,12 @@ import {
   ValidatorConstraint,
   ValidatorConstraintInterface,
 } from 'class-validator';
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { UserService } from 'src/user/user.service';
 
 @ValidatorConstraint({ async: true })
 @Injectable()
-export class EmailNotRegisteredValidator
+export class AccountRestrictionValidator
   implements ValidatorConstraintInterface
 {
   constructor(private readonly userService: UserService) {}
@@ -18,25 +18,30 @@ export class EmailNotRegisteredValidator
   async validate(value: any, args?: ValidationArguments) {
     if (typeof value !== 'string') return false;
     const user = await this.userService.findUserByEmail(value);
-    if (user) {
-      throw new ConflictException('Email is already registered');
+    if (!user) return true;
+
+    if (user.is_banned) {
+      throw new ForbiddenException('This account has been banned');
+    }
+    if (user.is_disabled) {
+      throw new ForbiddenException('This account has been disabled');
     }
     return true;
   }
 
   defaultMessage() {
-    return 'Email $value is already registered';
+    return 'Account access is restricted';
   }
 }
 
-export function EmailNotRegistered(validationOptions?: ValidationOptions) {
+export function AccountNotRestricted(validationOptions?: ValidationOptions) {
   return function (object: object, propertyName: string) {
     registerDecorator({
       target: object.constructor,
       propertyName: propertyName,
       options: validationOptions,
       constraints: [],
-      validator: EmailNotRegisteredValidator,
+      validator: AccountRestrictionValidator,
     });
   };
 }
