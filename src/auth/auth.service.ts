@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PosthogService } from '../analytics/posthog.service';
@@ -8,6 +8,7 @@ import { CreateUserDto } from 'src/models/user/create-user.dto';
 import { UserService } from 'src/user/user.service';
 import { User } from '@prisma/client';
 import * as argon2 from 'argon2';
+import { LoginJwtUserDto } from 'src/models/user/login-jwt-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -22,7 +23,7 @@ export class AuthService {
     this.userPasswordSalt = this.configService.get('userPassword.salt');
   }
 
-  async generateTokens(
+  private async generateTokens(
     user: any,
     metadata?: { userAgent?: string; ip?: string },
   ) {
@@ -32,7 +33,7 @@ export class AuthService {
     ]);
 
     await this.posthogService.capture({
-      distinctId: user.id.toString(),
+      distinctId: user.id,
       event: 'user.login',
       properties: {
         username: user.username,
@@ -79,41 +80,55 @@ export class AuthService {
       distinctId: newUser.id.toString(),
       event: 'user.signup',
       properties: {
-        username: newUser.email,
+        email: newUser.email,
         userAgent: metadata.userAgent,
         ip: metadata.ip,
       },
     });
 
     // Return generated JWT Tokens
-    return this.generateTokens(newUser, metadata);
+    // return this.generateTokens(newUser, metadata);
+    // Accounts are disabled at signup for the moment, so tokens will not be generated on the go
+    return 'Account created successfully!';
   }
 
-  async validateJwtUser(username: string, pass: string): Promise<any> {
-    // Your existing validation logic
-    const validationResult = { id: 1, username: 'test' }; // Mock result
+  async validateJwtUser(user: LoginJwtUserDto, metadata: LoginEventData) {
+    const foundUser = await this.userService.findUserByEmail(user.email);
 
+    let validationResult = null;
+    if (foundUser) {
+      const isPasswordValid = await argon2.verify(
+        foundUser.password,
+        user.password,
+      );
+
+      if (isPasswordValid) {
+        validationResult = foundUser;
+      }
+    }
+
+    // Send login attempt activity
     if (validationResult) {
       await this.posthogService.capture({
         distinctId: validationResult.id.toString(),
         event: 'user.login_attempt',
         properties: {
-          username,
+          email: user.email,
           success: true,
         },
       });
-      return validationResult;
+      return this.generateTokens(user, metadata);
     }
 
     await this.posthogService.capture({
-      distinctId: username,
+      distinctId: user.email,
       event: 'user.login_attempt',
       properties: {
-        username,
+        email: user.email,
         success: false,
       },
     });
-    return null;
+    throw new NotFoundException('Account Not Found!');
   }
 
   async handleGoogleAuth(
