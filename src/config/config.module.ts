@@ -9,15 +9,15 @@ import { googleConfig } from './google.config';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true,  // This makes ConfigModule available throughout the application
+      isGlobal: true, // This makes ConfigModule available throughout the application
       load: [
         environmentConfig,
         jwtConfig,
         userPasswordConfig,
         posthogConfig,
-        googleConfig  // Add this line
+        googleConfig, // Add this line
       ],
     }),
   ],
 })
-export class AppConfigModule { }
+export class AppConfigModule {}

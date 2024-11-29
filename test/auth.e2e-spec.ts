@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it, afterAll } from 'vitest';
 import { INestApplication } from '@nestjs/common';
-import supertest from 'supertest';  // Changed import
+import supertest from 'supertest'; // Changed import
 import { AppModule } from './../src/app.module';
 
 describe('Authentication (e2e)', () => {

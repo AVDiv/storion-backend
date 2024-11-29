@@ -1,4 +1,3 @@
-
 import swc from 'unplugin-swc';
 import { defineConfig } from 'vitest/config';
 
@@ -11,9 +10,11 @@ export default defineConfig({
       provider: 'istanbul',
       reporter: ['text', 'json-summary'],
       reportOnFailure: true,
-    }
+    },
   },
-  plugins: [swc.vite({
-    module: { type: 'es6' },
-  })],
+  plugins: [
+    swc.vite({
+      module: { type: 'es6' },
+    }),
+  ],
 });

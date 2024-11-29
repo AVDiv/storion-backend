@@ -23,10 +23,10 @@ import { UserModule } from 'src/user/user.module';
       inject: [ConfigService],
     }),
     AnalyticsModule,
-    UserModule
+    UserModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, RefreshTokenStrategy, GoogleStrategy],
   exports: [AuthService],
 })
-export class AuthModule { }
+export class AuthModule {}

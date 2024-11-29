@@ -5,20 +5,16 @@ import { User } from '@prisma/client';
 
 @Injectable()
 export class UserService {
-
-  ;
-  constructor(
-    private prisma: PrismaService
-  ) { }
+  constructor(private prisma: PrismaService) {}
 
   /**
    * Creates a user account
    *
    * @param {CreateUserDto} data
-   * @return {User} 
+   * @return {User}
    * @memberof UserService
    * @example
-   * 
+   *
    * // Create a user account
    * const user = await userService.createUser({
    *  name: "User's name",
@@ -26,7 +22,7 @@ export class UserService {
    *  password: "User's password"
    * })
    */
-  async createUser(data: CreateUserDto) {
+  async createUser(data: CreateUserDto): Promise<User> {
     return this.prisma.user.create({
       data,
     });
@@ -36,7 +32,7 @@ export class UserService {
     return this.prisma.user.findMany();
   }
 
-  async findUserById(id: string) {
+  async findUserById(id: string): Promise<User> {
     return this.prisma.user.findUnique({
       where: { id },
     });
@@ -46,15 +42,15 @@ export class UserService {
    * Returns a user filtered by email
    *
    * @param {string} email - User's email
-   * @return {User} 
+   * @return {User}
    * @memberof UserService
    * @example
-   * 
+   *
    * // Get a user by email
    * const user = await userService.findUserByEmail('email');
-   * 
+   *
    */
-  async findUserByEmail(email: string) {
+  async findUserByEmail(email: string): Promise<User> {
     return await this.prisma.user.findUnique({
       where: { email },
     });

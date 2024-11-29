@@ -1,4 +1,3 @@
-
 import { registerAs } from '@nestjs/config';
 
 export const posthogConfig = registerAs('posthog', () => ({

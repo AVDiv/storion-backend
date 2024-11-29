@@ -1,3 +1,3 @@
-import { SignupEventData } from "./signup-event-data.dto";
+import { SignupEventData } from './signup-event-data.dto';
 
-export class LoginEventData extends SignupEventData { }
+export class LoginEventData extends SignupEventData {}

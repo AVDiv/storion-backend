@@ -1,4 +1,11 @@
-import { Controller, Request, Post, UseGuards, Get, Body } from '@nestjs/common';
+import {
+  Controller,
+  Request,
+  Post,
+  UseGuards,
+  Get,
+  Body,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
@@ -7,14 +14,15 @@ import { RequestWithUser } from 'src/models/request/request-with-user.interface'
 import { SignupEventData } from 'src/models/event/signup-event-data.dto';
 import { CreateUserDto } from 'src/models/user/create-user.dto';
 
-
-
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) { }
+  constructor(private authService: AuthService) {}
 
   @Post('signup')
-  async signup(@Request() req: RequestWithUser, @Body() createUserDto: CreateUserDto) {
+  async signup(
+    @Request() req: RequestWithUser,
+    @Body() createUserDto: CreateUserDto,
+  ) {
     const metadata: SignupEventData = {
       userAgent: req.headers['user-agent'],
       ip: req.ip,
