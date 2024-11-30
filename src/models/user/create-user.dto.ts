@@ -1,6 +1,6 @@
 import { IsEmail, IsStrongPassword, MaxLength } from 'class-validator';
-import { EmailNotRegistered } from 'src/validation-rules/email-not-registered.rule';
-import { IsName } from 'src/validation-rules/name.rule';
+import { EmailNotRegistered } from 'src/validation-rules/email-not-registered/email-not-registered.rule';
+import { IsName } from 'src/validation-rules/name/name.rule';
 
 export class CreateUserDto {
   @IsName()
