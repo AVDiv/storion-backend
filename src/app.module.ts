@@ -5,7 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { AppConfigModule } from './config/config.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { PrismaModule } from './prisma/prisma.module';
-import { UserModule } from './user/user.module';
+import { UserModule } from './prisma/entities/user/user.module';
 import { ValidationRulesModule } from './validation-rules/validation-rules.module';
 
 @Module({
@@ -20,4 +20,4 @@ import { ValidationRulesModule } from './validation-rules/validation-rules.modul
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

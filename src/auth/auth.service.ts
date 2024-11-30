@@ -5,7 +5,7 @@ import { PosthogService } from '../analytics/posthog.service';
 import { LoginEventData } from 'src/models/event/login-event-data.dto';
 import { LoginGoogleUserDto } from 'src/models/user/login-google-user.dto';
 import { CreateUserDto } from 'src/models/user/create-user.dto';
-import { UserService } from 'src/user/user.service';
+import { UserEntity } from 'src/prisma/entities/user/user.entity';
 import { User } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { LoginJwtUserDto } from 'src/models/user/login-jwt-user.dto';
@@ -18,7 +18,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly posthogService: PosthogService,
-    private userService: UserService,
+    private userEntity: UserEntity,
   ) {
     this.userPasswordSalt = this.configService.get('userPassword.salt');
   }
@@ -73,7 +73,7 @@ export class AuthService {
     });
 
     // Create new user account
-    const newUser: User = await this.userService.createUser(user);
+    const newUser: User = await this.userEntity.createUser(user);
 
     // Send user signup activity log
     await this.posthogService.capture({
@@ -93,7 +93,7 @@ export class AuthService {
   }
 
   async validateJwtUser(user: LoginJwtUserDto, metadata: LoginEventData) {
-    const foundUser = await this.userService.findUserByEmail(user.email);
+    const foundUser = await this.userEntity.findUserByEmail(user.email);
 
     let validationResult = null;
     if (foundUser) {

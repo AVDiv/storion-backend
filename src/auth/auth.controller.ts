@@ -18,7 +18,7 @@ import { LoginJwtUserDto } from 'src/models/user/login-jwt-user.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @Post('signup')
   @HttpCode(201)
@@ -65,9 +65,7 @@ export class AuthController {
 
   @Get('google')
   @UseGuards(GoogleAuthGuard)
-  async googleAuth(@Request() req: RequestWithUser) {
-    // Guard handles the redirect
-  }
+  async googleAuth(@Request() req: RequestWithUser) { }
 
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)

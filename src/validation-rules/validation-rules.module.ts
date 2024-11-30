@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { EmailNotRegisteredValidator } from './email-not-registered.rule';
-import { UserModule } from 'src/user/user.module';
+import { UserModule } from 'src/prisma/entities/user/user.module';
 import { EmailRegisteredValidator } from './email-registered.rule';
 import { AccountRestrictionValidator } from './account-restriction.rule';
 
@@ -17,4 +17,4 @@ import { AccountRestrictionValidator } from './account-restriction.rule';
     AccountRestrictionValidator,
   ],
 })
-export class ValidationRulesModule {}
+export class ValidationRulesModule { }
