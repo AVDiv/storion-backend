@@ -4,7 +4,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { useContainer } from 'class-validator';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule); // Remove Fastify adapter
+  const app = await NestFactory.create(AppModule, { cors: true }); // Remove Fastify adapter
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
