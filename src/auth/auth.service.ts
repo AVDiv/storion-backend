@@ -50,16 +50,16 @@ export class AuthService {
     };
   }
 
-  async getAccessToken(user: any) {
-    const payload = { username: user.username, sub: user.id };
+  async getAccessToken(user: User) {
+    const payload = { username: user.email, sub: user.id };
     return this.jwtService.sign(payload, {
       secret: this.configService.get('jwt.accessToken.secret'),
       expiresIn: this.configService.get('jwt.accessToken.expiresIn'),
     });
   }
 
-  private async getRefreshToken(user: any) {
-    const payload = { username: user.username, sub: user.id };
+  private async getRefreshToken(user: User) {
+    const payload = { username: user.email, sub: user.id };
     return this.jwtService.sign(payload, {
       secret: this.configService.get('jwt.refreshToken.secret'),
       expiresIn: this.configService.get('jwt.refreshToken.expiresIn'),
@@ -119,7 +119,7 @@ export class AuthService {
           success: true,
         },
       });
-      return this.generateTokens(user, metadata);
+      return this.generateTokens(foundUser, metadata);
     }
 
     await this.posthogService.capture({
