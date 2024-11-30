@@ -6,18 +6,17 @@ import {
   ValidatorConstraintInterface,
 } from 'class-validator';
 import { Injectable, ConflictException } from '@nestjs/common';
-import { UserService } from 'src/user/user.service';
+import { UserEntity } from 'src/prisma/entities/user/user.entity';
 
 @ValidatorConstraint({ async: true })
 @Injectable()
 export class EmailNotRegisteredValidator
-  implements ValidatorConstraintInterface
-{
-  constructor(private readonly userService: UserService) {}
+  implements ValidatorConstraintInterface {
+  constructor(private readonly userEntity: UserEntity) { }
 
   async validate(value: any, args?: ValidationArguments) {
     if (typeof value !== 'string') return false;
-    const user = await this.userService.findUserByEmail(value);
+    const user = await this.userEntity.findUserByEmail(value);
     if (user) {
       throw new ConflictException('Email is already registered');
     }
