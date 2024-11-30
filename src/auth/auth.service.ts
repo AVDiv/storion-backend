@@ -23,7 +23,7 @@ export class AuthService {
     this.userPasswordSalt = this.configService.get('userPassword.salt');
   }
 
-  private async generateTokens(
+  async generateTokens(
     user: any,
     metadata?: { userAgent?: string; ip?: string },
   ) {
@@ -32,15 +32,17 @@ export class AuthService {
       this.getRefreshToken(user),
     ]);
 
-    await this.posthogService.capture({
-      distinctId: user.id,
-      event: 'user.login',
-      properties: {
-        username: user.username,
-        userAgent: metadata?.userAgent,
-        ip: metadata?.ip,
-      },
-    });
+    if (metadata) {
+      await this.posthogService.capture({
+        distinctId: user.id,
+        event: 'user.login',
+        properties: {
+          username: user.username,
+          userAgent: metadata?.userAgent,
+          ip: metadata?.ip,
+        },
+      });
+    }
 
     return {
       access_token: accessToken,
@@ -92,7 +94,7 @@ export class AuthService {
     return 'Account created successfully!';
   }
 
-  async validateJwtUser(user: LoginJwtUserDto, metadata: LoginEventData) {
+  async validateJwtUser(user: LoginJwtUserDto, metadata?: LoginEventData) {
     const foundUser = await this.userEntity.findUserByEmail(user.email);
 
     let validationResult = null;
