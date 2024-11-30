@@ -3,6 +3,15 @@ import { PrismaService } from '../../prisma.service';
 import { CreateUserDto } from 'src/models/user/create-user.dto';
 import { User } from '@prisma/client';
 
+/**
+ * Entity class for handling user-related database operations
+ * 
+ * @export
+ * @class UserEntity
+ * @description
+ * Provides methods for creating, reading, and managing user accounts in the database.
+ * Uses PrismaService to interact with the database layer.
+ */
 @Injectable()
 export class UserEntity {
   constructor(private prisma: PrismaService) { }
@@ -28,10 +37,31 @@ export class UserEntity {
     });
   }
 
-  async findAllUsers() {
+  /**
+   * Returns all users in the database
+   * 
+   * @return {Promise<User[]>} Array of all users
+   * @memberof UserEntity
+   * @example
+   * 
+   * // Get all users
+   * const users = await userEntity.getAllUsers();
+   */
+  async getAllUsers(): Promise<User[]> {
     return this.prisma.user.findMany();
   }
 
+  /**
+   * Returns a user filtered by their ID
+   *
+   * @param {string} id - User's unique identifier
+   * @return {Promise<User>} User with matching ID
+   * @memberof UserEntity
+   * @example
+   *
+   * // Get a user by ID
+   * const user = await userEntity.findUserById('user-id');
+   */
   async findUserById(id: string): Promise<User> {
     return this.prisma.user.findUnique({
       where: { id },
