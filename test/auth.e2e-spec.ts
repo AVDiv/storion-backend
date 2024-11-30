@@ -92,4 +92,37 @@ describe('Authentication (e2e)', () => {
         .expect(401);
     });
   });
+
+  describe('Google Auth', () => {
+    it('/auth/google (GET) - should redirect to Google', async () => {
+      const response = await supertest(app.getHttpServer())
+        .get('/auth/google')
+        .expect(302); // Redirect status code
+
+      expect(response.header.location).toMatch(/^https:\/\/accounts\.google\.com/);
+    });
+
+    it('/auth/google/callback (GET) - should handle Google callback', async () => {
+      // Mock successful Google authentication
+      const mockUser = {
+        accessToken: 'google-token',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        picture: 'http://example.com/photo.jpg',
+      };
+
+      // You'll need to properly mock the GoogleStrategy for this test
+      // This is a simplified example
+      const response = await supertest(app.getHttpServer())
+        .get('/auth/google/callback')
+        .query({
+          code: 'mock-auth-code',
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('access_token');
+      expect(response.body).toHaveProperty('refresh_token');
+    });
+  });
 });

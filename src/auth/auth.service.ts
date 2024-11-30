@@ -137,16 +137,44 @@ export class AuthService {
     googleUser: LoginGoogleUserDto,
     metadata: LoginEventData,
   ) {
-    // Convert Google user to your app's user format
-    const user = {
-      userId: googleUser.email, // You might want to generate or lookup a proper userId
-      username: googleUser.email,
-      firstName: googleUser.firstName,
-      lastName: googleUser.lastName,
-      picture: googleUser.picture,
-    };
+    // Check if user exists
+    let user = await this.userEntity.findUserByEmail(googleUser.email);
 
-    // Generate tokens like in regular login
-    return this.generateTokens(user, metadata);
+    if (!user) {
+      // Create new user from Google data
+      user = await this.userEntity.createUser({
+        email: googleUser.email,
+        name: `${googleUser.firstName} ${googleUser.lastName}`,
+        password: '',
+      });
+
+      // Log signup event
+      await this.posthogService.capture({
+        distinctId: user.id.toString(),
+        event: 'user.signup.google',
+        properties: {
+          email: user.email,
+          userAgent: metadata.userAgent,
+          ip: metadata.ip,
+        },
+      });
+    }
+
+    // Log login event
+    await this.posthogService.capture({
+      distinctId: user.id.toString(),
+      event: 'user.login.google',
+      properties: {
+        email: user.email,
+        userAgent: metadata.userAgent,
+        ip: metadata.ip,
+      },
+    });
+
+    // Generate tokens
+    return this.generateTokens({
+      id: user.id,
+      username: user.email,
+    }, metadata);
   }
 }

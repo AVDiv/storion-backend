@@ -11,14 +11,30 @@ describe('AuthService', () => {
   let service: AuthService;
   let jwtService: JwtService;
   let configService: ConfigService;
+  let mockUserEntity: { findUserByEmail: any; createUser: any };
+  let mockPosthogService: { capture: any };
 
   beforeEach(async () => {
+    mockUserEntity = {
+      findUserByEmail: vi.fn().mockResolvedValue({
+        id: 1,
+        email: 'test@example.com',
+        password: '$argon2id$v=19$m=16,t=2,p=1$dGVzdC1zYWx0$YUJW3F1x15IXUBj8n8ELTA', // pre-hashed "test" password
+        username: 'testuser'
+      }),
+      createUser: vi.fn(),
+    };
+
+    mockPosthogService = {
+      capture: vi.fn().mockResolvedValue(undefined),
+    };
+
     const mockJwtService = {
       sign: vi.fn().mockReturnValue('test-token'),
     };
 
     const mockConfigService = {
-      get: vi.fn((key: string) => {
+      get: vi.fn().mockImplementation((key: string) => {
         const config = {
           'jwt.accessToken.secret': 'test-access-secret',
           'jwt.accessToken.expiresIn': '1h',
@@ -30,40 +46,13 @@ describe('AuthService', () => {
       }),
     };
 
-    const mockPosthogService = {
-      capture: vi.fn().mockResolvedValue(undefined),
-    };
-
-    // Updated mockUserEntity with a proper user response
-    const mockUserEntity = {
-      findUserByEmail: vi.fn().mockResolvedValue({
-        id: 1,
-        email: 'test@example.com',
-        password: '$argon2id$v=19$m=16,t=2,p=1$dGVzdC1zYWx0$YUJW3F1x15IXUBj8n8ELTA', // pre-hashed "test" password
-        username: 'testuser'
-      }),
-      createUser: vi.fn().mockResolvedValue({ id: 1, username: 'test' }),
-    };
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
-        {
-          provide: JwtService,
-          useValue: mockJwtService,
-        },
-        {
-          provide: ConfigService,
-          useValue: mockConfigService,
-        },
-        {
-          provide: PosthogService,
-          useValue: mockPosthogService,
-        },
-        {
-          provide: UserEntity,
-          useValue: mockUserEntity,
-        },
+        { provide: JwtService, useValue: mockJwtService },
+        { provide: ConfigService, useValue: mockConfigService },
+        { provide: PosthogService, useValue: mockPosthogService },
+        { provide: UserEntity, useValue: mockUserEntity },
       ],
     }).compile();
 
@@ -138,6 +127,63 @@ describe('AuthService', () => {
     it('should return null when credentials are invalid', async () => {
       const user = { email: 'unknownuser', password: 'nopass' };
       await expect(service.validateJwtUser(user)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('handleGoogleAuth', () => {
+    const googleUser = {
+      accessToken: 'google-access-token',
+      email: 'test@example.com',
+      firstName: 'John',
+      lastName: 'Doe',
+      picture: 'http://example.com/photo.jpg',
+    };
+
+    const metadata = {
+      userAgent: 'test-agent',
+      ip: '127.0.0.1',
+    };
+
+    it('should create new user if not exists', async () => {
+      mockUserEntity.findUserByEmail.mockResolvedValueOnce(null);
+      mockUserEntity.createUser.mockResolvedValueOnce({
+        id: 1,
+        email: googleUser.email,
+        name: 'John Doe',
+      });
+
+      await service.handleGoogleAuth(googleUser, metadata);
+
+      expect(mockUserEntity.createUser).toHaveBeenCalledWith({
+        email: googleUser.email,
+        name: 'John Doe',
+        password: '',
+      });
+      expect(mockPosthogService.capture).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'user.signup.google',
+        }),
+      );
+    });
+
+    it('should login existing user', async () => {
+      const existingUser = {
+        id: 1,
+        email: googleUser.email,
+        name: 'John Doe',
+      };
+      mockUserEntity.findUserByEmail.mockResolvedValueOnce(existingUser);
+
+      const result = await service.handleGoogleAuth(googleUser, metadata);
+
+      expect(mockUserEntity.createUser).not.toHaveBeenCalled();
+      expect(result).toHaveProperty('access_token');
+      expect(result).toHaveProperty('refresh_token');
+      expect(mockPosthogService.capture).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'user.login.google',
+        }),
+      );
     });
   });
 });
