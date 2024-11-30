@@ -15,6 +15,7 @@ import { RequestWithUser } from 'src/models/request/request-with-user.interface'
 import { SignupEventData } from 'src/models/event/signup-event-data.dto';
 import { CreateUserDto } from 'src/models/user/create-user.dto';
 import { LoginJwtUserDto } from 'src/models/user/login-jwt-user.dto';
+import { LoginGoogleUserDto } from 'src/models/user/login-google-user.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -74,6 +75,6 @@ export class AuthController {
       userAgent: req.headers['user-agent'],
       ip: req.ip,
     };
-    return this.authService.handleGoogleAuth(req.user, metadata); // Now we can use req.user
+    return this.authService.handleGoogleAuth(req.user as LoginGoogleUserDto, metadata); // Now we can use req.user
   }
 }

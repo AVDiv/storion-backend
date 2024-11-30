@@ -24,7 +24,7 @@ export class AuthService {
   }
 
   async generateTokens(
-    user: any,
+    user: User,
     metadata?: { userAgent?: string; ip?: string },
   ) {
     const [accessToken, refreshToken] = await Promise.all([
@@ -37,7 +37,7 @@ export class AuthService {
         distinctId: user.id,
         event: 'user.login',
         properties: {
-          username: user.username,
+          username: user.email,
           userAgent: metadata?.userAgent,
           ip: metadata?.ip,
         },
@@ -50,7 +50,7 @@ export class AuthService {
     };
   }
 
-  async getAccessToken(user: User) {
+  async getAccessToken(user: any) {
     const payload = { username: user.email, sub: user.id };
     return this.jwtService.sign(payload, {
       secret: this.configService.get('jwt.accessToken.secret'),
@@ -58,7 +58,7 @@ export class AuthService {
     });
   }
 
-  private async getRefreshToken(user: User) {
+  private async getRefreshToken(user: any) {
     const payload = { username: user.email, sub: user.id };
     return this.jwtService.sign(payload, {
       secret: this.configService.get('jwt.refreshToken.secret'),
@@ -172,9 +172,6 @@ export class AuthService {
     });
 
     // Generate tokens
-    return this.generateTokens({
-      id: user.id,
-      username: user.email,
-    }, metadata);
+    return this.generateTokens(user, metadata);
   }
 }
