@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
 import { CreateUserDto } from 'src/models/user/create-user.dto';
 import { User } from '@prisma/client';
+import { OnboardingUserDto } from 'src/models/user/onboarding-user.dto';
 
 /**
  * Entity class for handling user-related database operations
@@ -84,5 +85,81 @@ export class UserEntity {
     return await this.prisma.user.findUnique({
       where: { email },
     });
+  }
+
+  /**
+   * Updates a user's onboarding information
+   * 
+   * @param {string} userId - User's unique identifier
+   * @param {OnboardingUserDto} data - Onboarding data to update
+   * @return {Promise<User>} Updated user
+   * @memberof UserEntity
+   * @example
+   * 
+   * // Update onboarding for a user
+   * const user = await userEntity.updateOnboarding('user-id', onboardingData);
+   */
+  async updateOnboarding(userId: string, data: OnboardingUserDto): Promise<User> {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...data,
+        onboardingCompleted: true
+      }
+    });
+  }
+
+  /**
+   * Checks if a user has completed the onboarding process
+   * 
+   * @param {string} userId - User's unique identifier
+   * @return {Promise<boolean>} Whether onboarding is completed
+   * @memberof UserEntity
+   * @example
+   * 
+   * // Check if onboarding is complete
+   * const isComplete = await userEntity.isOnboardingComplete('user-id');
+   */
+  async isOnboardingComplete(userId: string): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { onboardingCompleted: true }
+    });
+
+    return user?.onboardingCompleted || false;
+  }
+
+  /**
+   * Gets a user's onboarding information
+   * 
+   * @param {string} userId - User's unique identifier
+   * @return {Promise<Partial<OnboardingUserDto> & { completed: boolean }>} Onboarding data
+   * @memberof UserEntity
+   * @example
+   * 
+   * // Get onboarding data
+   * const onboardingData = await userEntity.getOnboardingData('user-id');
+   */
+  async getOnboardingData(userId: string): Promise<Partial<OnboardingUserDto> & { completed: boolean }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        description: true,
+        topics: true,
+        trackingConsent: true,
+        onboardingCompleted: true
+      }
+    });
+
+    if (!user) {
+      return { completed: false, topics: [], trackingConsent: false };
+    }
+
+    return {
+      description: user.description,
+      topics: user.topics,
+      trackingConsent: user.trackingConsent,
+      completed: user.onboardingCompleted
+    };
   }
 }
