@@ -13,6 +13,6 @@ model User {
   name        String
   email       String  @unique
   password    String
-  is_disabled Boolean         @default(true)
+  is_disabled Boolean         @default(false)
   is_banned   Boolean         @default(false)
 }
