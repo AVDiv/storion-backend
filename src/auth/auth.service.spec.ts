@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
-import { PosthogService } from '../analytics/posthog.service';
 import { UserEntity } from '../prisma/entities/user/user.entity';
 import { NotFoundException } from '@nestjs/common/exceptions';
 
@@ -12,7 +11,6 @@ describe('AuthService', () => {
   let jwtService: JwtService;
   let configService: ConfigService;
   let mockUserEntity: { findUserByEmail: any; createUser: any };
-  let mockPosthogService: { capture: any };
 
   beforeEach(async () => {
     mockUserEntity = {
@@ -23,10 +21,6 @@ describe('AuthService', () => {
         username: 'testuser'
       }),
       createUser: vi.fn(),
-    };
-
-    mockPosthogService = {
-      capture: vi.fn().mockResolvedValue(undefined),
     };
 
     const mockJwtService = {
@@ -51,7 +45,6 @@ describe('AuthService', () => {
         AuthService,
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
-        { provide: PosthogService, useValue: mockPosthogService },
         { provide: UserEntity, useValue: mockUserEntity },
       ],
     }).compile();
@@ -159,11 +152,6 @@ describe('AuthService', () => {
         name: 'John Doe',
         password: '',
       });
-      expect(mockPosthogService.capture).toHaveBeenCalledWith(
-        expect.objectContaining({
-          event: 'user.signup.google',
-        }),
-      );
     });
 
     it('should login existing user', async () => {
@@ -179,11 +167,6 @@ describe('AuthService', () => {
       expect(mockUserEntity.createUser).not.toHaveBeenCalled();
       expect(result).toHaveProperty('access_token');
       expect(result).toHaveProperty('refresh_token');
-      expect(mockPosthogService.capture).toHaveBeenCalledWith(
-        expect.objectContaining({
-          event: 'user.login.google',
-        }),
-      );
     });
   });
 });

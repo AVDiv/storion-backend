@@ -3,7 +3,6 @@ import { ConfigModule } from '@nestjs/config';
 import { environmentConfig } from './environment.config';
 import { jwtConfig } from './jwt.config';
 import { userPasswordConfig } from './user-password.config';
-import { posthogConfig } from './posthog.config';
 import { googleConfig } from './google.config';
 
 @Module({
@@ -14,10 +13,9 @@ import { googleConfig } from './google.config';
         environmentConfig,
         jwtConfig,
         userPasswordConfig,
-        posthogConfig,
-        googleConfig, // Add this line
+        googleConfig,
       ],
     }),
   ],
 })
-export class AppConfigModule {}
+export class AppConfigModule { }
