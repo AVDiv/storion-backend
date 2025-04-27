@@ -6,7 +6,6 @@ import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 import { AuthController } from './auth.controller';
-import { AnalyticsModule } from '../analytics/analytics.module';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { UserModule } from 'src/prisma/entities/user/user.module';
 
@@ -22,7 +21,6 @@ import { UserModule } from 'src/prisma/entities/user/user.module';
       }),
       inject: [ConfigService],
     }),
-    AnalyticsModule,
     UserModule,
   ],
   controllers: [AuthController],

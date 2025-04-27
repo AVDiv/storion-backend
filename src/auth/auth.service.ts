@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { PosthogService } from '../analytics/posthog.service';
 import { LoginEventData } from 'src/models/event/login-event-data.dto';
 import { LoginGoogleUserDto } from 'src/models/user/login-google-user.dto';
 import { CreateUserDto } from 'src/models/user/create-user.dto';
@@ -17,7 +16,6 @@ export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly posthogService: PosthogService,
     private userEntity: UserEntity,
   ) {
     this.userPasswordSalt = this.configService.get('userPassword.salt');
@@ -31,18 +29,6 @@ export class AuthService {
       this.getAccessToken(user),
       this.getRefreshToken(user),
     ]);
-
-    if (metadata) {
-      await this.posthogService.capture({
-        distinctId: user.id,
-        event: 'user.login',
-        properties: {
-          username: user.email,
-          userAgent: metadata?.userAgent,
-          ip: metadata?.ip,
-        },
-      });
-    }
 
     return {
       access_token: accessToken,
@@ -77,17 +63,6 @@ export class AuthService {
     // Create new user account
     const newUser: User = await this.userEntity.createUser(user);
 
-    // Send user signup activity log
-    await this.posthogService.capture({
-      distinctId: newUser.id.toString(),
-      event: 'user.signup',
-      properties: {
-        email: newUser.email,
-        userAgent: metadata.userAgent,
-        ip: metadata.ip,
-      },
-    });
-
     // Return generated JWT Tokens
     // return this.generateTokens(newUser, metadata);
     // Accounts are disabled at signup for the moment, so tokens will not be generated on the go
@@ -111,25 +86,9 @@ export class AuthService {
 
     // Send login attempt activity
     if (validationResult) {
-      await this.posthogService.capture({
-        distinctId: validationResult.id.toString(),
-        event: 'user.login_attempt',
-        properties: {
-          email: user.email,
-          success: true,
-        },
-      });
       return this.generateTokens(foundUser, metadata);
     }
 
-    await this.posthogService.capture({
-      distinctId: user.email,
-      event: 'user.login_attempt',
-      properties: {
-        email: user.email,
-        success: false,
-      },
-    });
     throw new NotFoundException('Account Not Found!');
   }
 
@@ -148,28 +107,7 @@ export class AuthService {
         password: '',
       });
 
-      // Log signup event
-      await this.posthogService.capture({
-        distinctId: user.id.toString(),
-        event: 'user.signup.google',
-        properties: {
-          email: user.email,
-          userAgent: metadata.userAgent,
-          ip: metadata.ip,
-        },
-      });
     }
-
-    // Log login event
-    await this.posthogService.capture({
-      distinctId: user.id.toString(),
-      event: 'user.login.google',
-      properties: {
-        email: user.email,
-        userAgent: metadata.userAgent,
-        ip: metadata.ip,
-      },
-    });
 
     // Generate tokens
     return this.generateTokens(user, metadata);

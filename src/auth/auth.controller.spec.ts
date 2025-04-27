@@ -3,7 +3,6 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { PosthogService } from '../analytics/posthog.service';
 import { UserEntity } from '../prisma/entities/user/user.entity';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LoginJwtUserDto } from 'src/models/user/login-jwt-user.dto';
@@ -26,10 +25,6 @@ describe('AuthController', () => {
         };
         return config[key];
       }),
-    };
-
-    const mockPosthogService = {
-      capture: vi.fn().mockResolvedValue(undefined),
     };
 
     const mockUserEntity = {
@@ -71,10 +66,6 @@ describe('AuthController', () => {
         {
           provide: ConfigService,
           useValue: mockConfigService,
-        },
-        {
-          provide: PosthogService,
-          useValue: mockPosthogService,
         },
         {
           provide: UserEntity,

@@ -49,17 +49,8 @@ export class AuthController {
   @Post('refresh')
   @UseGuards(AuthGuard('jwt-refresh'))
   async refreshToken(@Request() req: RequestWithUser) {
-    const user = req.user; // Now we can use req.user directly
+    const user = req.user;
     const accessToken = await this.authService.getAccessToken(user);
-
-    await this.authService['posthogService'].capture({
-      distinctId: user['userId'].toString(),
-      event: 'user.token_refresh',
-      properties: {
-        userAgent: req.headers['user-agent'],
-        ip: req.ip,
-      },
-    });
 
     return { access_token: accessToken };
   }
