@@ -6,6 +6,7 @@ import { AppConfigModule } from './config/config.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UserModule } from './prisma/entities/user/user.module';
 import { ValidationRulesModule } from './validation-rules/validation-rules.module';
+import { OnboardingModule } from './onboarding/onboarding.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { ValidationRulesModule } from './validation-rules/validation-rules.modul
     PrismaModule,
     UserModule,
     ValidationRulesModule,
+    OnboardingModule,
   ],
   controllers: [AppController],
   providers: [AppService],
