@@ -38,6 +38,9 @@ importers:
       class-validator:
         specifier: ^0.14.1
         version: 0.14.1
+      nest-neo4j:
+        specifier: ^0.3.1
+        version: 0.3.1
       passport:
         specifier: ^0.7.0
         version: 0.7.0
@@ -66,6 +69,9 @@ importers:
       '@eslint/js':
         specifier: ^9.15.0
         version: 9.15.0
+      '@golevelup/ts-vitest':
+        specifier: ^0.5.2
+        version: 0.5.2
       '@nestjs/cli':
         specifier: ^10.0.0
         version: 10.4.8(@swc/cli@0.5.1(@swc/core@1.9.3)(chokidar@3.6.0))(@swc/core@1.9.3)
@@ -426,6 +432,9 @@ packages:
   '@eslint/plugin-kit@0.2.3':
     resolution: {integrity: sha512-2b/g5hRmpbb1o4GnTZax9N9m0FXzz9OV42ZzI4rDDMDuHUqigAiQCEWChBWCY4ztAGVRjoWT19v0yMmc5/L5kA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@golevelup/ts-vitest@0.5.2':
+    resolution: {integrity: sha512-kxL12/4lBeYcdpfabvqWGgIagt8ycD6vUNlVyNUjGjxuqo8wPRB1Ohfnn4LNWQG8X8/xf74S2qYnOGqJ7IvWFA==}
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -1378,6 +1387,9 @@ packages:
 
   buffer@5.7.1:
     resolution: {integrity: sha512-EHcyIPBQ4BSGlvjB16k5KgAJ27CIsHY/2JBmCRReo48y9rQ3MaUzWX3KVlBa4U7MyX02HdVj0K7C3WaB3ju7FQ==}
+
+  buffer@6.0.3:
+    resolution: {integrity: sha512-FTiCpNxtwiZZHEZbcbTIcZjERVICn9yq/pDFkTl95/AxzD1naBctN7YO68riM/gLSDY7sdrMby8hofADYuuqOA==}
 
   busboy@1.6.0:
     resolution: {integrity: sha512-8SFQbg/0hQ9xy3UNTB0YEnsNBbWfhf7RtnzpL7TkBiTBRfrQ9Fxcnz7VJsleJpyp6rVLvXiuORqjlHi5q+PYuA==}
@@ -2406,6 +2418,18 @@ packages:
 
   neo-async@2.6.2:
     resolution: {integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==}
+
+  neo4j-driver-bolt-connection@5.28.1:
+    resolution: {integrity: sha512-nY8GBhjOW7J0rDtpiyJn6kFdk2OiNVZZhZrO8//mwNXnf5VQJ6HqZQTDthH/9pEaX0Jvbastz1xU7ZL8xzqY0w==}
+
+  neo4j-driver-core@5.28.1:
+    resolution: {integrity: sha512-14vN8TlxC0JvJYfjWic5PwjsZ38loQLOKFTXwk4fWLTbCk6VhrhubB2Jsy9Rz+gM6PtTor4+6ClBEFDp1q/c8g==}
+
+  neo4j-driver@5.28.1:
+    resolution: {integrity: sha512-jbyBwyM0a3RLGcP43q3hIxPUPxA+1bE04RovOKdNAS42EtBMVCKcPSeOvWiHxgXp1ZFd0a8XqK+7LtguInOLUg==}
+
+  nest-neo4j@0.3.1:
+    resolution: {integrity: sha512-Anp2Qmn8tledjzgU+R76Pw9eTmRYtwwTuqknWWgGNfBnd2VdRDQRaVEscTmoLM6KNkd0W10NU1hie4CWwZ2qTg==}
 
   node-abort-controller@3.1.1:
     resolution: {integrity: sha512-AGK2yQKIjRuqnc6VkX2Xj5d+QW8xZ87pa1UK6yA6ouUyuxfHuMP6umE5QK7UmTeOAymo+Zx1Fxiuw9rVx8taHQ==}
@@ -3532,6 +3556,8 @@ snapshots:
     dependencies:
       levn: 0.4.1
 
+  '@golevelup/ts-vitest@0.5.2': {}
+
   '@humanfs/core@0.19.1': {}
 
   '@humanfs/node@0.16.6':
@@ -4558,6 +4584,11 @@ snapshots:
   buffer-from@1.1.2: {}
 
   buffer@5.7.1:
+    dependencies:
+      base64-js: 1.5.1
+      ieee754: 1.2.1
+
+  buffer@6.0.3:
     dependencies:
       base64-js: 1.5.1
       ieee754: 1.2.1
@@ -5594,6 +5625,24 @@ snapshots:
   negotiator@0.6.3: {}
 
   neo-async@2.6.2: {}
+
+  neo4j-driver-bolt-connection@5.28.1:
+    dependencies:
+      buffer: 6.0.3
+      neo4j-driver-core: 5.28.1
+      string_decoder: 1.3.0
+
+  neo4j-driver-core@5.28.1: {}
+
+  neo4j-driver@5.28.1:
+    dependencies:
+      neo4j-driver-bolt-connection: 5.28.1
+      neo4j-driver-core: 5.28.1
+      rxjs: 7.8.1
+
+  nest-neo4j@0.3.1:
+    dependencies:
+      neo4j-driver: 5.28.1
 
   node-abort-controller@3.1.1: {}
 
