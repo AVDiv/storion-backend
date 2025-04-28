@@ -8,6 +8,7 @@ import { UserModule } from './prisma/entities/user/user.module';
 import { ValidationRulesModule } from './validation-rules/validation-rules.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
 import { Neo4jModule } from './neo4j/neo4j.module';
+import { SearchModule } from './search/search.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { Neo4jModule } from './neo4j/neo4j.module';
     ValidationRulesModule,
     OnboardingModule,
     Neo4jModule,
+    SearchModule,
   ],
   controllers: [AppController],
   providers: [AppService],

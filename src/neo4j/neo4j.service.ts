@@ -8,15 +8,15 @@ export class Neo4jService {
   /**
    * Execute a Cypher query
    */
-  async read(cypher: string, params: Record<string, any> = {}) {
+  async read<T>(cypher: string, params: Record<string, any> = {}): Promise<T[]> {
     const result = await this.neo4jService.read(cypher, params);
     return result.records.map(record => {
       const properties = {};
       record.keys.forEach(key => {
         properties[key] = this.getValue(record.get(key));
       });
-      return properties;
-    });
+      return (properties as T);
+    }) as T[];
   }
 
   /**
