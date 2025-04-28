@@ -133,7 +133,6 @@ export class SearchService {
              g.title as title, 
              g.summary as summary, 
              g.keywords as keywords,
-             g.main_entities as mainEntities, 
              g.created_at as createdAt, 
              g.updated_at as updatedAt,
              articleCount,

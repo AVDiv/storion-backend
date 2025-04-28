@@ -9,6 +9,7 @@ import { ValidationRulesModule } from './validation-rules/validation-rules.modul
 import { OnboardingModule } from './onboarding/onboarding.module';
 import { Neo4jModule } from './neo4j/neo4j.module';
 import { SearchModule } from './search/search.module';
+import { DataModule } from './data/data.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { SearchModule } from './search/search.module';
     OnboardingModule,
     Neo4jModule,
     SearchModule,
+    DataModule,
   ],
   controllers: [AppController],
   providers: [AppService],
