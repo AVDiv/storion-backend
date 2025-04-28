@@ -7,6 +7,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { UserModule } from './prisma/entities/user/user.module';
 import { ValidationRulesModule } from './validation-rules/validation-rules.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
+import { Neo4jModule } from './neo4j/neo4j.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { OnboardingModule } from './onboarding/onboarding.module';
     UserModule,
     ValidationRulesModule,
     OnboardingModule,
+    Neo4jModule,
   ],
   controllers: [AppController],
   providers: [AppService],
