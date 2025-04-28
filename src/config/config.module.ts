@@ -4,6 +4,7 @@ import { environmentConfig } from './environment.config';
 import { jwtConfig } from './jwt.config';
 import { userPasswordConfig } from './user-password.config';
 import { googleConfig } from './google.config';
+import neo4jConfig from './neo4j.config';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { googleConfig } from './google.config';
         jwtConfig,
         userPasswordConfig,
         googleConfig,
+        neo4jConfig,
       ],
     }),
   ],
