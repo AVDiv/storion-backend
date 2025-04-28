@@ -1,7 +1,7 @@
 import { ForbiddenException } from '@nestjs/common';
 import { OnboardingCompletedGuard } from './onboarding-completed.guard';
 import { OnboardingService } from '../onboarding.service';
-import { createMock } from '@golevelup/ts-jest';
+import { createMock } from '@golevelup/ts-vitest';
 import { ExecutionContext } from '@nestjs/common';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { vi } from 'vitest';
@@ -65,7 +65,7 @@ describe('OnboardingCompletedGuard', () => {
       });
 
       await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(
-        new ForbiddenException('Authentication required')
+        new ForbiddenException('Authentication required or user ID missing')
       );
     });
   });
