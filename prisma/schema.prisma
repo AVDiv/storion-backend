@@ -7,6 +7,17 @@ datasource db {
   url      = env("DATABASE_CONNECTION_STRING")
 }
 
+model UserProfile {
+  id                   String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId               String    @unique @db.ObjectId
+  user                 User      @relation(fields: [userId], references: [id])
+  shortTermPreferences Json      @default("{\"categories\": {}, \"tags\": {}}")
+  longTermPreferences  Json      @default("{\"categories\": {}, \"tags\": {}}")
+  clickHistory         Json[]    @default([])
+  lastInteraction      DateTime  @default(now())
+  createdAt            DateTime  @default(now())
+}
+
 model User {
   id                 String   @id     @default(auto()) @map("_id") @db.ObjectId
   name               String
@@ -18,4 +29,5 @@ model User {
   topics             String[]
   trackingConsent    Boolean  @default(false)
   onboardingCompleted Boolean  @default(false)
+  profile            UserProfile?
 }
