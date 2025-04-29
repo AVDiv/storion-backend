@@ -10,6 +10,7 @@ import { OnboardingModule } from './onboarding/onboarding.module';
 import { Neo4jModule } from './neo4j/neo4j.module';
 import { SearchModule } from './search/search.module';
 import { DataModule } from './data/data.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { DataModule } from './data/data.module';
     Neo4jModule,
     SearchModule,
     DataModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
