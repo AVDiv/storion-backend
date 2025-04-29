@@ -141,6 +141,7 @@ export class AnalyticsService {
 
   /**
    * Process article interaction events (click, read, save)
+   * These are regular events that require tracking consent
    */
   private async processArticleInteraction(
     event: PostHogEventDto,
@@ -196,18 +197,19 @@ export class AnalyticsService {
     };
 
     // Record the interaction with appropriate weighting
+    // Pass isOnboarding=false since this is a regular event
     await this.userProfileService.recordArticleInteraction(
       distinct_id,
       clickData,
       interactionType,
-      timeSpent
+      timeSpent,
+      false // Not part of onboarding flow
     );
   }
 
   /**
    * Process onboarding completion events to initialize user preferences
-   * Extracts topics from both explicit selections and user description
-   * Also extracts keywords for tags from user description
+   * These events bypass tracking consent check since they're explicitly initiated by the user
    */
   private async processOnboardingCompletion(event: PostHogEventDto): Promise<void> {
     const { distinct_id, properties } = event;
@@ -217,16 +219,8 @@ export class AnalyticsService {
     // Extract explicitly selected topics from the event properties
     const selectedTopics = properties.selectedTopics || [];
 
-    // Extract user description
-    const description = properties.description || '';
-
-    // Create a set of topics to avoid duplicates
-    const topicSet = new Set(selectedTopics);
-
-    // Extract implicit topics from the description with their weights
-    const extractedTopics = this.textAnalysisService.extractTopicsFromText(description);
-
     // Extract keywords to use as initial tags with weights
+    const description = properties.description || '';
     const extractedKeywords = this.textAnalysisService.extractKeywordsFromText(description, {
       maxKeywords: 15,
       minKeywordLength: 3,
@@ -234,59 +228,16 @@ export class AnalyticsService {
       removeStopwords: true
     });
 
-    // Add extracted topics to the combined topic list
-    const combinedTopics = [...selectedTopics];
-
-    // Track the total weight for extracted topics for logging
-    let totalImplicitWeight = 0;
-
-    // Process each extracted topic
-    for (const { topic, weight } of extractedTopics) {
-      // Skip topics that were explicitly selected (they'll get the default weight of 4)
-      if (!topicSet.has(topic)) {
-        // Add topic to combined list
-        combinedTopics.push(topic);
-
-        // Use the weight from text analysis (will be applied in updateUserPreferences)
-        totalImplicitWeight += weight;
-
-        this.logger.debug(`Extracted topic "${topic}" with weight ${weight} from user description`);
-      }
-    }
-
-    if (extractedTopics.length > 0) {
-      this.logger.log(
-        `Extracted ${extractedTopics.length} additional topics from user description with total weight ${totalImplicitWeight.toFixed(2)}`
-      );
-    }
-
-    // Skip if no topics are available from either source
-    if (combinedTopics.length === 0) {
-      this.logger.debug(`No topics found for user ${distinct_id} (neither selected nor extracted)`);
-      return;
-    }
-
     // First, initialize with explicitly selected topics (weight = 4)
     if (selectedTopics.length > 0) {
       await this.userProfileService.updateUserPreferences(
         distinct_id,
         selectedTopics,
         [], // No tags from explicit selection
-        4   // Higher weight for explicit preferences
+        4,  // Higher weight for explicit preferences
+        undefined, // No time spent
+        true
       );
-    }
-
-    // Then, add topics extracted from description with their calculated weights
-    for (const { topic, weight } of extractedTopics) {
-      // Skip topics that were explicitly selected (already handled)
-      if (!selectedTopics.includes(topic)) {
-        await this.userProfileService.updateUserPreferences(
-          distinct_id,
-          [topic],
-          [], // No tags from topic extraction
-          weight // Use the weight calculated during extraction
-        );
-      }
     }
 
     // Process extracted keywords as tags
@@ -303,20 +254,21 @@ export class AnalyticsService {
         distinct_id,
         [], // No categories for this update
         tags, // Use extracted keywords as tags
-        avgKeywordWeight * 2 // Scale up tag weights slightly
+        avgKeywordWeight * 2, // Scale up tag weights slightly
+        undefined, // No time spent
+        true // Bypass tracking consent check for onboarding
       );
 
       this.logger.log(
         `Added ${tags.length} tags to user ${distinct_id} profile from description with average weight ${avgKeywordWeight.toFixed(2)}`
       );
     }
-
-    this.logger.log(`Initialized user ${distinct_id} preferences with ${combinedTopics.length} topics and ${extractedKeywords.length} tags`);
   }
 
   /**
    * Process timed-out sessions to ensure we capture reading time
    * even when a user doesn't generate a page leave event
+   * These events require tracking consent
    */
   processTimedOutSessions(): void {
     const timedOutSessions = this.sessionTrackingService.cleanupStaleSessions();
@@ -345,7 +297,7 @@ export class AnalyticsService {
           timestamp: new Date().toISOString()
         };
 
-        // Process the synthetic event
+        // Process the synthetic event (requires tracking consent)
         this.processArticleInteraction(syntheticEvent, 'read_article')
           .catch(err => this.logger.error(`Error processing timed out session: ${err.message}`));
       }

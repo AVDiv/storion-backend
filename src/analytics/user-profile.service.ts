@@ -2,12 +2,16 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ClickHistoryItemDto } from './dto/user-profile.dto';
 import { NewsEventCategoryDto } from './dto/posthog-webhook.dto';
+import { TrackingConsentService } from '../validation-rules/tracking-consent/tracking-consent.rule';
 
 @Injectable()
 export class UserProfileService {
   private readonly logger = new Logger(UserProfileService.name);
 
-  constructor(private readonly prismaService: PrismaService) { }
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly trackingConsentService: TrackingConsentService
+  ) { }
 
   /**
    * Get a user's profile by distinct_id (which could be a user ID or email)
@@ -19,6 +23,7 @@ export class UserProfileService {
       let user = await this.prismaService.user.findFirst({
         where: {
           OR: [
+            { id: distinctId },
             { email: distinctId }
           ]
         }
@@ -60,15 +65,41 @@ export class UserProfileService {
    * @param tags Array of tags
    * @param weight Weight to apply based on interaction type
    * @param timeSpent Optional time spent on content for weight modification
+   * @param isOnboarding Whether this update is part of onboarding (bypass consent check)
    */
   async updateUserPreferences(
     distinctId: string,
     categories: string[] | NewsEventCategoryDto[],
     tags: string[] = [],
     weight: number = 1,
-    timeSpent?: number
+    timeSpent?: number,
+    isOnboarding: boolean = false
   ) {
     try {
+      // Try to find user by ID first
+      let user = await this.prismaService.user.findFirst({
+        where: {
+          OR: [
+            { id: distinctId },
+            { email: distinctId }
+          ]
+        }
+      });
+
+      if (!user) {
+        this.logger.warn(`User with ID or email ${distinctId} not found`);
+        return null;
+      }
+
+      // Check tracking consent for regular updates (not onboarding)
+      if (!isOnboarding) {
+        const hasConsent = await this.trackingConsentService.hasTrackingConsent(user.id);
+        if (!hasConsent) {
+          this.logger.log(`Skipping preference update for user ${user.id}: No tracking consent`);
+          return null;
+        }
+      }
+
       const profile = await this.getOrCreateUserProfile(distinctId);
       if (!profile) return null;
 
@@ -149,14 +180,44 @@ export class UserProfileService {
 
   /**
    * Add article interaction to user history and update profile
+   * @param distinctId User identifier
+   * @param clickData Click data to record
+   * @param interactionType Type of interaction
+   * @param timeSpent Time spent on article
+   * @param isOnboarding Whether this is part of onboarding (bypass consent check)
    */
   async recordArticleInteraction(
     distinctId: string,
     clickData: ClickHistoryItemDto,
     interactionType: 'clicked_article' | 'read_article' | 'saved_article',
-    timeSpent?: number
+    timeSpent?: number,
+    isOnboarding: boolean = false
   ) {
     try {
+      // Try to find user by ID first
+      let user = await this.prismaService.user.findFirst({
+        where: {
+          OR: [
+            { id: distinctId },
+            { email: distinctId }
+          ]
+        }
+      });
+
+      if (!user) {
+        this.logger.warn(`User with ID or email ${distinctId} not found`);
+        return null;
+      }
+
+      // Check tracking consent for regular updates (not onboarding)
+      if (!isOnboarding) {
+        const hasConsent = await this.trackingConsentService.hasTrackingConsent(user.id);
+        if (!hasConsent) {
+          this.logger.log(`Skipping interaction record for user ${user.id}: No tracking consent`);
+          return null;
+        }
+      }
+
       const profile = await this.getOrCreateUserProfile(distinctId);
       if (!profile) return null;
 
@@ -187,7 +248,8 @@ export class UserProfileService {
         clickData.categories || [],
         clickData.tags || [],
         weight,
-        timeSpent
+        timeSpent,
+        isOnboarding
       );
 
       // Update click history
