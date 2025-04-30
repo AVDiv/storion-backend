@@ -11,6 +11,7 @@ import { Neo4jModule } from './neo4j/neo4j.module';
 import { SearchModule } from './search/search.module';
 import { DataModule } from './data/data.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { FeedModule } from './feed/feed.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     SearchModule,
     DataModule,
     AnalyticsModule,
+    FeedModule,
   ],
   controllers: [AppController],
   providers: [AppService],
