@@ -17,20 +17,17 @@ export class UserProfileService {
    * Get a user's profile by distinct_id (which could be a user ID or email)
    * Creates a default profile if none exists
    */
-  async getOrCreateUserProfile(distinctId: string) {
+  async getOrCreateUserProfile(identifier: { id?: string, email?: string }) {
+    if (!identifier.id && !identifier.email) {
+      throw new NotFoundException('Either id or email must be provided');
+    }
     try {
       // Try to find user by ID first
       let user = await this.prismaService.user.findFirst({
-        where: {
-          OR: [
-            { id: distinctId },
-            { email: distinctId }
-          ]
-        }
+        where: { ...(identifier.id ? { id: identifier.id } : { email: identifier.email }) }
       });
 
       if (!user) {
-        this.logger.warn(`User with ID or email ${distinctId} not found`);
         return null;
       }
 
@@ -78,12 +75,7 @@ export class UserProfileService {
     try {
       // Try to find user by ID first
       let user = await this.prismaService.user.findFirst({
-        where: {
-          OR: [
-            { id: distinctId },
-            { email: distinctId }
-          ]
-        }
+        where: { email: distinctId }
       });
 
       if (!user) {
@@ -100,7 +92,7 @@ export class UserProfileService {
         }
       }
 
-      const profile = await this.getOrCreateUserProfile(distinctId);
+      const profile = await this.getOrCreateUserProfile({ email: distinctId });
       if (!profile) return null;
 
       // Apply time spent modifier if available (>30s × 1.2)
@@ -218,7 +210,7 @@ export class UserProfileService {
         }
       }
 
-      const profile = await this.getOrCreateUserProfile(distinctId);
+      const profile = await this.getOrCreateUserProfile({ email: distinctId });
       if (!profile) return null;
 
       // Get current click history and add new item (limited to 20 items)

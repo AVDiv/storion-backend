@@ -46,7 +46,6 @@ export class TextAnalysisService {
       maxKeywords = 10,
       minKeywordLength = 3,
       maxKeywordLength = 20,
-      minWeight = 0.5,
       removeStopwords = true,
     } = options;
 
@@ -59,7 +58,6 @@ export class TextAnalysisService {
       return_chained_words: true,
       ...(removeStopwords ? { stopwords: keyword_extractor.getStopwords({ language: "english" }) } : {}),
     });
-
     // Count occurrences of each keyword
     const keywordCounts: Record<string, number> = {};
     extraction_result.forEach(keyword => {
@@ -71,10 +69,11 @@ export class TextAnalysisService {
 
     // Calculate weights and create result array
     const totalWords = description.split(/\s+/).length;
+
     const results: ExtractedKeyword[] = Object.entries(keywordCounts)
       .map(([keyword, count]) => {
         // Calculate weight based on frequency and text length
-        const weight = Math.min(3, (count * 5) / Math.max(5, totalWords));
+        const weight = (count / totalWords);
 
         return {
           keyword,
@@ -82,8 +81,6 @@ export class TextAnalysisService {
           weight
         };
       })
-      // Filter keywords by minimum weight
-      .filter(item => item.weight >= minWeight)
       // Sort by weight (highest first)
       .sort((a, b) => b.weight - a.weight)
       // Limit to maximum number of keywords
