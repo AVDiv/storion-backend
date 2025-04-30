@@ -4,6 +4,7 @@ import { UserProfileService } from './user-profile.service';
 import { SessionTrackingService } from './session-tracking.service';
 import { TextAnalysisService } from './text-analysis.service';
 import { ClickHistoryItemDto } from './dto/user-profile.dto';
+import { UserEntity } from 'src/prisma/entities/user/user.entity';
 
 @Injectable()
 export class AnalyticsService {
@@ -11,6 +12,7 @@ export class AnalyticsService {
 
   constructor(
     private readonly userProfileService: UserProfileService,
+    private readonly userEntity: UserEntity,
     private readonly sessionTrackingService: SessionTrackingService,
     private readonly textAnalysisService: TextAnalysisService
   ) { }
@@ -212,15 +214,18 @@ export class AnalyticsService {
    * These events bypass tracking consent check since they're explicitly initiated by the user
    */
   private async processOnboardingCompletion(event: PostHogEventDto): Promise<void> {
-    const { distinct_id, properties } = event;
+    const { distinct_id } = event;
 
     if (!distinct_id) return;
 
+    // Get onboarding details from the database
+    const userData = await this.userEntity.findUserByEmail(distinct_id);
+
     // Extract explicitly selected topics from the event properties
-    const selectedTopics = properties.selectedTopics || [];
+    const selectedTopics = userData.topics || [];
 
     // Extract keywords to use as initial tags with weights
-    const description = properties.description || '';
+    const description = userData.description || '';
     const extractedKeywords = this.textAnalysisService.extractKeywordsFromText(description, {
       maxKeywords: 15,
       minKeywordLength: 3,
