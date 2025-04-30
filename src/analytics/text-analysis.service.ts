@@ -21,37 +21,6 @@ export class TextAnalysisService {
   private readonly topicDictionary: Record<string, string[]> = {
     // Add your topic dictionary here
   };
-
-  // /**
-  //  * Extract topics from a text description and assign weights
-  //  * @param description User-provided text description
-  //  * @returns Array of topics with weights
-  //  */
-  // extractTopicsFromText(description: string): TopicMatch[] {
-  //   if (!description || typeof description !== 'string') {
-  //     return [];
-  //   }
-
-  //   const topicMatches: TopicMatch[] = [];
-  //   const words = description.toLowerCase().split(/\s+/);
-
-  //   for (const topic in this.topicDictionary) {
-  //     const keywords = this.topicDictionary[topic];
-  //     let weight = 0;
-
-  //     for (const keyword of keywords) {
-  //       const occurrences = words.filter(word => word === keyword).length;
-  //       weight += occurrences;
-  //     }
-
-  //     if (weight > 0) {
-  //       topicMatches.push({ topic, weight });
-  //     }
-  //   }
-
-  //   return topicMatches.sort((a, b) => b.weight - a.weight);
-  // }
-
   /**
    * Extract keywords from text description to use as tags
    * @param description User-provided text description
