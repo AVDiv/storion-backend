@@ -214,12 +214,12 @@ export class AnalyticsService {
    * These events bypass tracking consent check since they're explicitly initiated by the user
    */
   private async processOnboardingCompletion(event: PostHogEventDto): Promise<void> {
-    const { distinct_id, properties } = event;
+    const { distinct_id } = event;
 
     if (!distinct_id) return;
 
     // Get onboarding details from the database
-    const userData = await this.userEntity.findUserById(distinct_id);
+    const userData = await this.userEntity.findUserByEmail(distinct_id);
 
     // Extract explicitly selected topics from the event properties
     const selectedTopics = userData.topics || [];
