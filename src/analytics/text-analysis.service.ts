@@ -73,7 +73,7 @@ export class TextAnalysisService {
     const results: ExtractedKeyword[] = Object.entries(keywordCounts)
       .map(([keyword, count]) => {
         // Calculate weight based on frequency and text length
-        const weight = (count / totalWords);
+        const weight = (count / totalWords) * 4;
 
         return {
           keyword,
