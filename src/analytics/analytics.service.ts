@@ -239,7 +239,7 @@ export class AnalyticsService {
         distinct_id,
         selectedTopics,
         [], // No tags from explicit selection
-        4,  // Higher weight for explicit preferences
+        2,  // Higher weight for explicit preferences
         undefined, // No time spent
         true
       );
