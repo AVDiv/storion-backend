@@ -76,7 +76,10 @@ export class SourceService {
              a.publication_date as publicationDate,
              COALESCE(a.updated_at, '') as updatedAt,
              g.id as groupId,
-             g.title as groupTitle
+             g.title as groupTitle,
+             a.language_bias as languageBias,
+             a.political_bias_confidence as politicalBiasConfidence,
+             a.political_bias_orientation as politicalBiasOrientation
       ORDER BY a.publication_date DESC
       SKIP ${offset}
       LIMIT ${limit}
@@ -95,7 +98,10 @@ export class SourceService {
       publicationDate: article.publicationDate || null,
       createdAt: article.createdAt,
       updatedAt: article.updatedAt || null,
-      groupId: article.groupId
+      groupId: article.groupId,
+      languageBias: article.languageBias,
+      politicalBiasConfidence: article.politicalBiasConfidence,
+      politicalBiasOrientation: article.politicalBiasOrientation
     }));
   }
 }

@@ -6,4 +6,7 @@ export class ArticleOfSourceDto {
   createdAt: string;
   updatedAt: string | null;
   groupId: string | null;
+  languageBias?: number;
+  politicalBiasConfidence?: number;
+  politicalBiasOrientation?: string;
 }

@@ -115,16 +115,71 @@ export class SearchService {
            // Bonus for title containing query
            (CASE WHEN toLower(g.title) CONTAINS toLower($originalQuery) THEN 7.0 ELSE 0.0 END) AS relevanceScore
       
-      // First count related articles
+      // First count related articles and calculate bias metrics on the fly
       OPTIONAL MATCH (g)<-[:BELONGS_TO_GROUP]-(a:Article)
-      WITH g, COUNT(a) as articleCount, relevanceScore
+      WITH g, 
+           COUNT(a) as articleCount, 
+           relevanceScore,
+           // Calculate average language bias of all articles
+           AVG(a.language_bias) as overallLanguageBias,
+           // Count unbiased articles (language_bias < 0)
+           COUNT(CASE WHEN a.language_bias < 0 THEN a ELSE null END) as unbiasedArticlesCount,
+           // Count biased articles (language_bias >= 0)
+           COUNT(CASE WHEN a.language_bias >= 0 THEN a ELSE null END) as biasedArticlesCount,
+           // Calculate average political bias confidence
+           AVG(a.political_bias_confidence) as overallPoliticalBiasConfidence,
+           // Count political orientation articles
+           COUNT(CASE WHEN a.political_bias_orientation = 'left' THEN a ELSE null END) as leftLeaningArticlesCount,
+           COUNT(CASE WHEN a.political_bias_orientation = 'right' THEN a ELSE null END) as rightLeaningArticlesCount,
+           COUNT(CASE WHEN a.political_bias_orientation = 'center' THEN a ELSE null END) as centerArticlesCount,
+           // Calculate weighted political bias score (-1 for left, 0 for center, 1 for right)
+           CASE WHEN COUNT(a) > 0 THEN
+             SUM(
+               CASE
+                 WHEN a.political_bias_orientation = 'left' THEN -1 * a.political_bias_confidence
+                 WHEN a.political_bias_orientation = 'right' THEN 1 * a.political_bias_confidence
+                 ELSE 0
+               END
+             ) / COUNT(a)
+           ELSE 0 END as overallPoliticalBiasScore
       
       // Then collect topics
       OPTIONAL MATCH (g)-[r:FOCUSES_ON]->(t:Topic)
-      WITH g, articleCount, relevanceScore, COLLECT({name: t.name, score: r.weight}) as topics
+      WITH g, 
+           articleCount, 
+           relevanceScore, 
+           overallLanguageBias,
+           unbiasedArticlesCount,
+           biasedArticlesCount,
+           overallPoliticalBiasConfidence,
+           overallPoliticalBiasScore,
+           leftLeaningArticlesCount,
+           rightLeaningArticlesCount,
+           centerArticlesCount,
+           COLLECT({name: t.name, score: r.weight}) as topics
       
       // Normalize score separately (0-100 scale)
-      WITH g, articleCount, topics, relevanceScore,
+      WITH g, 
+           articleCount, 
+           topics, 
+           relevanceScore, 
+           overallLanguageBias,
+           unbiasedArticlesCount,
+           biasedArticlesCount,
+           overallPoliticalBiasConfidence,
+           overallPoliticalBiasScore,
+           leftLeaningArticlesCount,
+           rightLeaningArticlesCount,
+           centerArticlesCount,
+           // Calculate political bias distribution
+           CASE WHEN articleCount > 0 
+                THEN {
+                  left: toFloat(leftLeaningArticlesCount) / articleCount, 
+                  right: toFloat(rightLeaningArticlesCount) / articleCount,
+                  center: toFloat(centerArticlesCount) / articleCount
+                } 
+                ELSE {} 
+           END as politicalBiasDistribution,
            (CASE WHEN relevanceScore > 0 THEN 
               CASE WHEN relevanceScore > 100.0 THEN 100.0 ELSE relevanceScore END
             ELSE 0.0 END) as normalizedScore
@@ -135,6 +190,15 @@ export class SearchService {
              g.keywords as keywords,
              g.created_at as createdAt, 
              g.updated_at as updatedAt,
+             overallLanguageBias,
+             unbiasedArticlesCount,
+             biasedArticlesCount,
+             overallPoliticalBiasConfidence,
+             overallPoliticalBiasScore,
+             leftLeaningArticlesCount,
+             rightLeaningArticlesCount,
+             centerArticlesCount,
+             politicalBiasDistribution,
              articleCount,
              topics,
              normalizedScore as relevanceScore
@@ -158,7 +222,18 @@ export class SearchService {
       updatedAt: record.updatedAt,
       articleCount: record.articleCount,
       topics: record.topics?.filter(topic => topic.name),
-      relevanceScore: record.relevanceScore
+      relevanceScore: record.relevanceScore,
+      // Language bias properties
+      overallLanguageBias: record.overallLanguageBias,
+      unbiasedArticlesCount: record.unbiasedArticlesCount,
+      biasedArticlesCount: record.biasedArticlesCount,
+      // Political bias properties
+      overallPoliticalBiasConfidence: record.overallPoliticalBiasConfidence,
+      overallPoliticalBiasScore: record.overallPoliticalBiasScore,
+      leftLeaningArticlesCount: record.leftLeaningArticlesCount,
+      rightLeaningArticlesCount: record.rightLeaningArticlesCount,
+      centerArticlesCount: record.centerArticlesCount,
+      politicalBiasDistribution: record.politicalBiasDistribution
     }));
   }
 
