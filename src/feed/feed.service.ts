@@ -160,12 +160,38 @@ export class FeedService {
              ELSE 0.2
            END as recencyScore
       
-      // Count related articles to factor in popularity
+      // Count related articles and calculate average bias on the fly
       OPTIONAL MATCH (g)<-[:BELONGS_TO_GROUP]-(article:Article)
-      WITH g, topicScore, recencyScore, COUNT(article) as articleCount
+      WITH g, topicScore, recencyScore, COUNT(article) as articleCount, 
+           // Language bias calculation
+           AVG(article.language_bias) as overallLanguageBias,
+           // Count unbiased and biased articles (language)
+           COUNT(CASE WHEN article.language_bias < 0 THEN article ELSE null END) as unbiasedArticlesCount,
+           COUNT(CASE WHEN article.language_bias >= 0 THEN article ELSE null END) as biasedArticlesCount,
+           // Political bias calculations
+           AVG(article.political_bias_confidence) as overallPoliticalBiasConfidence,
+           // Count political orientation articles
+           COUNT(CASE WHEN article.political_bias_orientation = 'left' THEN article ELSE null END) as leftLeaningArticlesCount,
+           COUNT(CASE WHEN article.political_bias_orientation = 'right' THEN article ELSE null END) as rightLeaningArticlesCount,
+           COUNT(CASE WHEN article.political_bias_orientation = 'center' THEN article ELSE null END) as centerArticlesCount,
+           // Calculate weighted political bias score (-1 for left, 0 for center, 1 for right)
+           CASE WHEN COUNT(article) > 0 THEN
+             SUM(
+               CASE
+                 WHEN article.political_bias_orientation = 'left' THEN -1 * article.political_bias_confidence
+                 WHEN article.political_bias_orientation = 'right' THEN 1 * article.political_bias_confidence
+                 ELSE 0
+               END
+             ) / COUNT(article)
+           ELSE 0 END as overallPoliticalBiasScore
       
       // Next, evaluate keyword matches
-      WITH g, topicScore, recencyScore, articleCount,
+      WITH g, topicScore, recencyScore, articleCount, 
+           // Language bias
+           overallLanguageBias, unbiasedArticlesCount, biasedArticlesCount,
+           // Political bias
+           overallPoliticalBiasConfidence, overallPoliticalBiasScore, 
+           leftLeaningArticlesCount, rightLeaningArticlesCount, centerArticlesCount,
            // Calculate tag relevance using Jaccard similarity with user's tag preferences
            CASE 
              WHEN g.keywords IS NOT NULL AND size(g.keywords) > 0 AND size($allTags) > 0 THEN
@@ -184,9 +210,23 @@ export class FeedService {
              WHEN topicScore > 0 AND size([tag IN g.keywords WHERE tag IN $topTags]) > 0 THEN 'Matches your interests'
              WHEN topicScore > 0 THEN 'Recommended topics'
              ELSE 'Content you might like'
-           END as matchReason,
+           END as           matchReason,
            g.keywords as keywords,
-           articleCount
+           articleCount,
+           // Language bias
+           overallLanguageBias, unbiasedArticlesCount, biasedArticlesCount,
+           // Political bias
+           overallPoliticalBiasConfidence, overallPoliticalBiasScore,
+           leftLeaningArticlesCount, rightLeaningArticlesCount, centerArticlesCount,
+           // Calculate political bias distribution
+           CASE WHEN articleCount > 0 
+                THEN {
+                  left: toFloat(leftLeaningArticlesCount) / articleCount, 
+                  right: toFloat(rightLeaningArticlesCount) / articleCount,
+                  center: toFloat(centerArticlesCount) / articleCount
+                } 
+                ELSE {} 
+           END as politicalBiasDistribution
       
       // Return article groups sorted by relevance
       RETURN g.id as id,
@@ -198,7 +238,18 @@ export class FeedService {
              // Collect topics with weights
              [(g)-[r:FOCUSES_ON]->(t:Topic) | {name: t.name, score: COALESCE(r.weight, 0)}] as topics,
              relevanceScore,
-             matchReason
+             matchReason,
+             // Language bias
+             overallLanguageBias,
+             unbiasedArticlesCount,
+             biasedArticlesCount,
+             // Political bias
+             overallPoliticalBiasConfidence,
+             overallPoliticalBiasScore,
+             leftLeaningArticlesCount,
+             rightLeaningArticlesCount,
+             centerArticlesCount,
+             politicalBiasDistribution
       ORDER BY relevanceScore DESC
       SKIP ${query.offset}
       LIMIT ${query.limit}
@@ -257,13 +308,39 @@ export class FeedService {
             ${excludeClause}
             ${topicFilterClause}
       
-      // Count articles in each group for popularity
+      // Count articles in each group for popularity and calculate bias on the fly
       OPTIONAL MATCH (g)<-[:BELONGS_TO_GROUP]-(a:Article)
-      WITH g, COUNT(a) as articleCount
+      WITH g, COUNT(a) as articleCount, 
+           // Language bias calculation
+           AVG(a.language_bias) as overallLanguageBias,
+           // Count unbiased and biased articles (language)
+           COUNT(CASE WHEN a.language_bias < 0 THEN a ELSE null END) as unbiasedArticlesCount,
+           COUNT(CASE WHEN a.language_bias >= 0 THEN a ELSE null END) as biasedArticlesCount,
+           // Political bias calculations
+           AVG(a.political_bias_confidence) as overallPoliticalBiasConfidence,
+           // Count political orientation articles
+           COUNT(CASE WHEN a.political_bias_orientation = 'left' THEN a ELSE null END) as leftLeaningArticlesCount,
+           COUNT(CASE WHEN a.political_bias_orientation = 'right' THEN a ELSE null END) as rightLeaningArticlesCount,
+           COUNT(CASE WHEN a.political_bias_orientation = 'center' THEN a ELSE null END) as centerArticlesCount,
+           // Calculate weighted political bias score (-1 for left, 0 for center, 1 for right)
+           CASE WHEN COUNT(a) > 0 THEN
+             SUM(
+               CASE
+                 WHEN a.political_bias_orientation = 'left' THEN -1 * a.political_bias_confidence
+                 WHEN a.political_bias_orientation = 'right' THEN 1 * a.political_bias_confidence
+                 ELSE 0
+               END
+             ) / COUNT(a)
+           ELSE 0 END as overallPoliticalBiasScore
       
       // Calculate trending score based on article count and recency
       // Even with no articles, it will return results scored by recency
-      WITH g, articleCount,
+      WITH g, articleCount, 
+           // Language bias
+           overallLanguageBias, unbiasedArticlesCount, biasedArticlesCount,
+           // Political bias
+           overallPoliticalBiasConfidence, overallPoliticalBiasScore, 
+           leftLeaningArticlesCount, rightLeaningArticlesCount, centerArticlesCount,
            CASE 
              WHEN g.created_at > datetime() - duration('P3D') THEN 1.2
              WHEN g.created_at > datetime() - duration('P7D') THEN 1.0
@@ -271,7 +348,21 @@ export class FeedService {
              ELSE 0.6
            END as recencyFactor
       
-      WITH g, articleCount, recencyFactor,
+      WITH g, articleCount, recencyFactor, 
+           // Language bias
+           overallLanguageBias, unbiasedArticlesCount, biasedArticlesCount,
+           // Political bias
+           overallPoliticalBiasConfidence, overallPoliticalBiasScore, 
+           leftLeaningArticlesCount, rightLeaningArticlesCount, centerArticlesCount,
+           // Calculate political bias distribution
+           CASE WHEN articleCount > 0 
+                THEN {
+                  left: toFloat(leftLeaningArticlesCount) / articleCount, 
+                  right: toFloat(rightLeaningArticlesCount) / articleCount,
+                  center: toFloat(centerArticlesCount) / articleCount
+                } 
+                ELSE {} 
+           END as politicalBiasDistribution,
            COALESCE(articleCount * recencyFactor, recencyFactor) as trendingScore,
            CASE
              WHEN articleCount > 3 THEN 'Trending now'
@@ -288,7 +379,18 @@ export class FeedService {
              // Use COALESCE to handle null values in topic relationship weights
              [(g)-[r:FOCUSES_ON]->(t:Topic) | {name: t.name, score: COALESCE(r.weight, 0)}] as topics,
              trendingScore as relevanceScore,
-             matchReason
+             matchReason,
+             // Language bias
+             overallLanguageBias,
+             unbiasedArticlesCount,
+             biasedArticlesCount,
+             // Political bias
+             overallPoliticalBiasConfidence,
+             overallPoliticalBiasScore,
+             leftLeaningArticlesCount,
+             rightLeaningArticlesCount,
+             centerArticlesCount,
+             politicalBiasDistribution
       ORDER BY trendingScore DESC
       SKIP ${query.offset}
       LIMIT ${query.limit}
@@ -329,12 +431,47 @@ export class FeedService {
             ${excludeClause}
             ${topicFilterClause}
       
-      // Count articles in each group
+      // Count articles in each group and calculate bias metrics
       OPTIONAL MATCH (g)<-[:BELONGS_TO_GROUP]-(a:Article)
-      WITH g, COUNT(a) as articleCount
+      WITH g, COUNT(a) as articleCount, 
+           // Language bias calculation
+           AVG(a.language_bias) as overallLanguageBias,
+           // Count unbiased and biased articles (language)
+           COUNT(CASE WHEN a.language_bias < 0 THEN a ELSE null END) as unbiasedArticlesCount,
+           COUNT(CASE WHEN a.language_bias >= 0 THEN a ELSE null END) as biasedArticlesCount,
+           // Political bias calculations
+           AVG(a.political_bias_confidence) as overallPoliticalBiasConfidence,
+           // Count political orientation articles
+           COUNT(CASE WHEN a.political_bias_orientation = 'left' THEN a ELSE null END) as leftLeaningArticlesCount,
+           COUNT(CASE WHEN a.political_bias_orientation = 'right' THEN a ELSE null END) as rightLeaningArticlesCount,
+           COUNT(CASE WHEN a.political_bias_orientation = 'center' THEN a ELSE null END) as centerArticlesCount,
+           // Calculate weighted political bias score (-1 for left, 0 for center, 1 for right)
+           CASE WHEN COUNT(a) > 0 THEN
+             SUM(
+               CASE
+                 WHEN a.political_bias_orientation = 'left' THEN -1 * a.political_bias_confidence
+                 WHEN a.political_bias_orientation = 'right' THEN 1 * a.political_bias_confidence
+                 ELSE 0
+               END
+             ) / COUNT(a)
+           ELSE 0 END as overallPoliticalBiasScore
       
       // Calculate recency score for consistent sorting when created_at is the same
-      WITH g, articleCount,
+      WITH g, articleCount, 
+           // Language bias
+           overallLanguageBias, unbiasedArticlesCount, biasedArticlesCount,
+           // Political bias
+           overallPoliticalBiasConfidence, overallPoliticalBiasScore,
+           leftLeaningArticlesCount, rightLeaningArticlesCount, centerArticlesCount,
+           // Calculate political bias distribution
+           CASE WHEN articleCount > 0 
+                THEN {
+                  left: toFloat(leftLeaningArticlesCount) / articleCount, 
+                  right: toFloat(rightLeaningArticlesCount) / articleCount,
+                  center: toFloat(centerArticlesCount) / articleCount
+                } 
+                ELSE {} 
+           END as politicalBiasDistribution,
            CASE 
              WHEN g.created_at > datetime() - duration('P1D') THEN 1.5
              WHEN g.created_at > datetime() - duration('P3D') THEN 1.3
@@ -351,7 +488,18 @@ export class FeedService {
              // Use COALESCE to handle null values in topic relationship weights
              [(g)-[r:FOCUSES_ON]->(t:Topic) | {name: t.name, score: COALESCE(r.weight, 0)}] as topics,
              recencyScore as relevanceScore,
-             'Latest updates' as matchReason
+             'Latest updates' as matchReason,
+             // Language bias
+             overallLanguageBias,
+             unbiasedArticlesCount,
+             biasedArticlesCount,
+             // Political bias
+             overallPoliticalBiasConfidence,
+             overallPoliticalBiasScore,
+             leftLeaningArticlesCount,
+             rightLeaningArticlesCount,
+             centerArticlesCount,
+             politicalBiasDistribution
       ORDER BY g.created_at DESC, recencyScore DESC, articleCount DESC
       SKIP ${query.offset}
       LIMIT ${query.limit}
@@ -487,7 +635,18 @@ export class FeedService {
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
       relevanceScore: record.relevanceScore,
-      matchReason: record.matchReason
+      matchReason: record.matchReason,
+      // Language bias properties
+      overallLanguageBias: record.overallLanguageBias,
+      unbiasedArticlesCount: record.unbiasedArticlesCount,
+      biasedArticlesCount: record.biasedArticlesCount,
+      // Political bias properties
+      overallPoliticalBiasConfidence: record.overallPoliticalBiasConfidence,
+      overallPoliticalBiasScore: record.overallPoliticalBiasScore,
+      leftLeaningArticlesCount: record.leftLeaningArticlesCount,
+      rightLeaningArticlesCount: record.rightLeaningArticlesCount,
+      centerArticlesCount: record.centerArticlesCount,
+      politicalBiasDistribution: record.politicalBiasDistribution
     }));
   }
 }

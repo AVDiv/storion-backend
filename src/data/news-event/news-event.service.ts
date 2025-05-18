@@ -16,14 +16,58 @@ export class NewsEventService {
     const cypher = `
       MATCH (g:ArticleGroup {id: $id})
       
-      // Count related articles
+      // Count related articles and calculate bias metrics on the fly
       OPTIONAL MATCH (g)<-[:BELONGS_TO_GROUP]-(a:Article)
-      WITH g, COUNT(a) as articleCount
+      WITH g, 
+           COUNT(a) as articleCount,
+           // Calculate average language bias of all articles
+           AVG(a.language_bias) as overallLanguageBias,
+           // Count unbiased articles (language_bias < 0)
+           COUNT(CASE WHEN a.language_bias < 0 THEN a ELSE null END) as unbiasedArticlesCount,
+           // Count biased articles (language_bias >= 0)
+           COUNT(CASE WHEN a.language_bias >= 0 THEN a ELSE null END) as biasedArticlesCount,
+           // Calculate average political bias confidence
+           AVG(a.political_bias_confidence) as overallPoliticalBiasConfidence,
+           // Count political orientation articles
+           COUNT(CASE WHEN a.political_bias_orientation = 'left' THEN a ELSE null END) as leftLeaningArticlesCount,
+           COUNT(CASE WHEN a.political_bias_orientation = 'right' THEN a ELSE null END) as rightLeaningArticlesCount,
+           COUNT(CASE WHEN a.political_bias_orientation = 'center' THEN a ELSE null END) as centerArticlesCount,
+           // Calculate weighted political bias score (-1 for left, 0 for center, 1 for right)
+           CASE WHEN COUNT(a) > 0 THEN
+             SUM(
+               CASE
+                 WHEN a.political_bias_orientation = 'left' THEN -1 * a.political_bias_confidence
+                 WHEN a.political_bias_orientation = 'right' THEN 1 * a.political_bias_confidence
+                 ELSE 0
+               END
+             ) / COUNT(a)
+           ELSE 0 END as overallPoliticalBiasScore
       
       // Collect topics with weights, only include relationships where removed is false or null
       OPTIONAL MATCH (g)-[r:FOCUSES_ON]->(t:Topic)
       WHERE r.removed IS NULL OR r.removed = false
-      WITH g, articleCount, COLLECT({name: t.name, score: r.weight}) as topics
+      WITH g, 
+           articleCount, 
+           // Language bias
+           overallLanguageBias, 
+           unbiasedArticlesCount, 
+           biasedArticlesCount,
+           // Political bias 
+           overallPoliticalBiasConfidence,
+           overallPoliticalBiasScore,
+           leftLeaningArticlesCount,
+           rightLeaningArticlesCount,
+           centerArticlesCount,
+           // Calculate political bias distribution
+           CASE WHEN articleCount > 0 
+                THEN {
+                  left: toFloat(leftLeaningArticlesCount) / articleCount, 
+                  right: toFloat(rightLeaningArticlesCount) / articleCount,
+                  center: toFloat(centerArticlesCount) / articleCount
+                } 
+                ELSE {} 
+           END as politicalBiasDistribution,
+           COLLECT({name: t.name, score: r.weight}) as topics
       
       RETURN g.id as id,
              g.title as title,
@@ -32,6 +76,17 @@ export class NewsEventService {
              g.main_entities as mainEntities,
              g.created_at as createdAt,
              g.updated_at as updatedAt,
+             // Language bias
+             overallLanguageBias,
+             unbiasedArticlesCount,
+             biasedArticlesCount,
+             // Political bias
+             overallPoliticalBiasConfidence,
+             overallPoliticalBiasScore,
+             leftLeaningArticlesCount,
+             rightLeaningArticlesCount,
+             centerArticlesCount,
+             politicalBiasDistribution,
              articleCount,
              topics
     `;
@@ -52,6 +107,17 @@ export class NewsEventService {
       updatedAt: results[0].updatedAt,
       articleCount: results[0].articleCount,
       topics: results[0].topics || [],
+      // Language bias
+      overallLanguageBias: results[0].overallLanguageBias,
+      unbiasedArticlesCount: results[0].unbiasedArticlesCount,
+      biasedArticlesCount: results[0].biasedArticlesCount,
+      // Political bias
+      overallPoliticalBiasConfidence: results[0].overallPoliticalBiasConfidence,
+      overallPoliticalBiasScore: results[0].overallPoliticalBiasScore,
+      leftLeaningArticlesCount: results[0].leftLeaningArticlesCount,
+      rightLeaningArticlesCount: results[0].rightLeaningArticlesCount,
+      centerArticlesCount: results[0].centerArticlesCount,
+      politicalBiasDistribution: results[0].politicalBiasDistribution,
     };
   }
 
@@ -92,7 +158,10 @@ export class NewsEventService {
              a.publication_date as publicationDate,
              a.updated_at as updatedAt,
              s.id as sourceId,
-             s.name as sourceName
+             s.name as sourceName,
+             a.language_bias as languageBias,
+             a.political_bias_confidence as politicalBiasConfidence,
+             a.political_bias_orientation as politicalBiasOrientation
       ORDER BY a.publication_date DESC
       SKIP ${offset}
       LIMIT ${limit}
